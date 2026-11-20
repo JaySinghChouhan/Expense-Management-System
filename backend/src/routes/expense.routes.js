@@ -1,0 +1,15 @@
+const router=require("express").Router();
+const {body,param}=require("express-validator");
+const validate=require("../middleware/validate.middleware");
+const {protect,requireAdmin}=require("../middleware/auth.middleware");
+const asyncHandler=require("../utils/asyncHandler");
+const c=require("../controllers/expense.controller");
+router.use(protect);
+router.get("/",asyncHandler(c.list));
+router.post("/",[body("title").trim().notEmpty().isLength({max:120}),body("amount").isFloat({gt:0}),body("category").trim().notEmpty(),body("date").isISO8601(),body("paymentMethod").isIn(["Cash","Card","UPI","Bank Transfer","Other"]),body("description").trim().notEmpty().isLength({max:1000}),validate],asyncHandler(c.create));
+router.get("/:id",[param("id").isMongoId(),validate],asyncHandler(c.getOne));
+router.patch("/:id",[param("id").isMongoId(),validate],asyncHandler(c.update));
+router.delete("/:id",[param("id").isMongoId(),validate],asyncHandler(c.remove));
+router.post("/:id/approve",requireAdmin,[param("id").isMongoId(),validate],asyncHandler((req,res)=>{req.params.action="approve";return c.review(req,res);}));
+router.post("/:id/reject",requireAdmin,[param("id").isMongoId(),validate],asyncHandler((req,res)=>{req.params.action="reject";return c.review(req,res);}));
+module.exports=router;
