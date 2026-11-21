@@ -7,6 +7,7 @@ let mongo;
 beforeAll(async () => {
   process.env.JWT_SECRET = "test_secret_at_least_32_characters_long";
   mongo = await MongoMemoryServer.create();
+  process.env.MONGO_URI = mongo.getUri();
   await mongoose.connect(mongo.getUri());
 });
 afterEach(async () => {
@@ -35,6 +36,22 @@ describe("Authentication API", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
+  });
+
+  test("connects to MongoDB before handling API requests after a cold start", async () => {
+    const previousMongoURI = process.env.MONGO_URI;
+    await mongoose.disconnect();
+    process.env.MONGO_URI = mongo.getUri();
+
+    try {
+      const response = await request(app).get("/api/health");
+
+      expect(response.status).toBe(200);
+      expect(mongoose.connection.readyState).toBe(1);
+    } finally {
+      if (previousMongoURI === undefined) delete process.env.MONGO_URI;
+      else process.env.MONGO_URI = previousMongoURI;
+    }
   });
 
   test("registers a user and returns a JWT", async () => {

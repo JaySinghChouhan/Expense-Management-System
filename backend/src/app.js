@@ -8,6 +8,8 @@ const expenseRoutes = require("./routes/expense.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const reportRoutes = require("./routes/report.routes");
 const { notFound, errorHandler } = require("./middleware/error.middleware");
+const asyncHandler = require("./utils/asyncHandler");
+const connectDB = require("./config/database");
 
 const app = express();
 // Render (and other reverse proxies) set X-Forwarded-For. Trust one hop so rate limiting uses the client IP.
@@ -33,6 +35,10 @@ app.use(cors({
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
+app.use("/api", asyncHandler(async (_req, _res, next) => {
+  await connectDB();
+  next();
+}));
 app.get("/api/health", (_req, res) => res.json({ success: true, message: "Expense API is healthy" }));
 app.get("/api/v1", (_req, res) => res.json({ success: true, message: "Expense API v1 is running" }));
 app.use("/api/v1/auth", authRoutes);

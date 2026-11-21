@@ -18,6 +18,7 @@ const claim = {
 beforeAll(async () => {
   process.env.JWT_SECRET = "test_secret_at_least_32_characters_long";
   mongo = await MongoMemoryServer.create();
+  process.env.MONGO_URI = mongo.getUri();
   await mongoose.connect(mongo.getUri());
 });
 
