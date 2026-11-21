@@ -89,6 +89,16 @@ describe("Expense API", () => {
     expect(afterDelete.status).toBe(404);
   });
 
+  test("accepts the frontend's empty status filter", async () => {
+    const token = await tokenFor("empty-filter@example.com");
+    const response = await request(app)
+      .get("/api/v1/expenses?search=&status=&category=&sortBy=date&order=desc&page=1&limit=8")
+      .set(auth(token));
+
+    expect(response.status).toBe(200);
+    expect(response.body.meta.total).toBe(0);
+  });
+
   test("rejects a claim that is missing a description", async () => {
     const token = await tokenFor("owner@example.com");
     const response = await request(app).post("/api/v1/expenses").set(auth(token)).send({ ...claim, description: " " });
