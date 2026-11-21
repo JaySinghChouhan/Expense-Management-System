@@ -1,5 +1,5 @@
 # Backend API
-
+<!-- Read me file -->
 1. Copy `.env.example` to `.env` and set `MONGO_URI` and a long random `JWT_SECRET`.
 2. Run `npm install`.
 3. Run `npm run dev`.
