@@ -14,13 +14,14 @@ cd backend
 npm install
 copy .env.example .env
 ```
-On macOS/Linux use `cp .env.example .env`. Edit `.env` and set `MONGO_URI` and a long random `JWT_SECRET`.
+On macOS/Linux use `cp .env.example .env`. Edit `.env` and set `MONGO_URI` and a random `JWT_SECRET` of at least 32 characters.
 ```bash
+npm run migrate
 npm run dev
 ```
 API: http://localhost:5000/api/health
 
-Optional demo seed (in another terminal):
+The frontend includes a `/register` page for creating user accounts. For a local-only demo dataset, run this optional seed instead:
 ```bash
 cd backend
 node scripts/seed.js
@@ -48,7 +49,7 @@ Full notes: [docs/API.md](docs/API.md). Import [docs/expense-api.postman_collect
 - GET `/api/v1/expenses` (auth; supports page, limit, search, status, category, from, to, sortBy, order)
 - POST `/api/v1/expenses`
 - GET `/api/v1/expenses/:id`
-- PATCH `/api/v1/expenses/:id` (pending claims only; send `version` for optimistic concurrency)
+- PATCH `/api/v1/expenses/:id` (pending claims only; `version` is required for optimistic concurrency)
 - DELETE `/api/v1/expenses/:id` (soft delete; pending claims only)
 - POST `/api/v1/expenses/:id/approve` (Admin)
 - POST `/api/v1/expenses/:id/reject` (Admin)
@@ -60,24 +61,35 @@ Register cannot self-assign Admin. The seed script creates the demo admin. Promo
 
 ## Tests
 ```bash
-cd backend && npm test
-cd frontend && npm test
+cd backend
+npm test
+cd ../frontend
+npm test
 ```
+
+## Docker development
+Copy the root `.env.example` to `.env`, replace `JWT_SECRET` with a random value of at least 32 characters, then run:
+```bash
+docker compose up --build
+```
+The frontend is at http://localhost:5173 and the API health endpoint is http://localhost:5000/api/health. MongoDB data persists in the `mongo_data` volume.
+The Compose stack runs Vite in development mode; do not expose it as a production frontend.
 
 ## Security notes
 - Passwords use bcrypt hashing.
-- JWT secret is environment-only.
+- JWT secret is environment-only and the API refuses to start without a 32-character value.
 - User list/detail/update/delete queries are scoped to the authenticated user; Admin can view all.
 - Soft deletes preserve records.
 - Approval uses atomic conditional update so a pending expense cannot be approved twice.
 - Helmet, CORS, rate limiting, validation, and centralized errors are included.
-- For production, add refresh-token rotation, email verification, stronger audit/event retention, pagination caps, and monitoring.
+- For production, add refresh-token rotation, email verification, stronger audit/event retention, and monitoring.
 
 ## Deploy frontend and API
 
 The deployment configuration is included in `render.yaml` and `frontend/vercel.json`.
+MongoDB migrations are versioned in `backend/migrations` and run with `npm run migrate` from `backend`; the runner records applied IDs in `schema_migrations`.
 
-1. In MongoDB Atlas, create a database user and allow network access from Render (prefer Render's outbound IPs where available). Use the Atlas connection string with the `expense_management` database.
+1. In MongoDB Atlas, create a database user and allow network access from the API host. Use the Atlas connection string with the `expense_management` database.
 2. Deploy the API on Render using `render.yaml`, or use the existing Vercel API deployment. Set `MONGO_URI` to the Atlas connection string and `JWT_SECRET` to a long random value in the API host's environment. Keep `SEED_DEMO` set to `false` for public deployments; the seeded demo accounts are not created in this mode.
 3. Deploy the frontend on Vercel with Root Directory `frontend`, framework Vite, and output directory `dist`. Set `VITE_API_URL` to the API base URL ending in `/api/v1`.
 4. Set the API's `CLIENT_URL` to the frontend origin and redeploy the API. For the current Vercel deployment, use `https://expense-management-system-57v.vercel.app` as `CLIENT_URL` and `https://expense-management-system-363f.vercel.app/api/v1` as `VITE_API_URL`.

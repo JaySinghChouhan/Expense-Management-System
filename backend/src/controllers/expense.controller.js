@@ -70,8 +70,8 @@ exports.update = async (req,res) => {
     return res.status(400).json({success:false,message:"Amount must be greater than zero"});
   if(updates.description!==undefined && !String(updates.description).trim())
     return res.status(400).json({success:false,message:"Description is required"});
-  updates.version = (Number(req.body.version)||0)+1;
-  const item=await Expense.findOneAndUpdate({...q, ...(req.body.version!==undefined?{version:Number(req.body.version)}:{})},{$set:updates},{new:true,runValidators:true});
+  const version=Number(req.body.version);
+  const item=await Expense.findOneAndUpdate({...q,version},{$set:{...updates,version:version+1}},{new:true,runValidators:true});
   if(!item) return res.status(409).json({success:false,message:"Expense not found, not editable, or changed by another request. Refresh and try again."});
   res.json({success:true,data:item});
 };

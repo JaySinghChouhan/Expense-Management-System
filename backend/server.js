@@ -4,6 +4,11 @@ const connectDB = require("./src/config/database");
 const seedDemo = require("./src/config/seedDemo");
 
 const PORT = process.env.PORT || 5000;
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error("Startup failed: JWT_SECRET must be set to a value of at least 32 characters.");
+  process.exit(1);
+}
+
 connectDB()
   .then(async () => {
     if (process.env.SEED_DEMO === "true") {

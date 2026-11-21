@@ -59,6 +59,10 @@ describe("Expense API", () => {
     expect(created.body.data.status).toBe("pending");
     const id = created.body.data._id;
 
+    const fetched = await request(app).get(`/api/v1/expenses/${id}`).set(auth(token));
+    expect(fetched.status).toBe(200);
+    expect(fetched.body.data._id).toBe(id);
+
     const listed = await request(app).get("/api/v1/expenses").set(auth(token)).query({ search: "Airport", sortBy: "amount", order: "asc" });
     expect(listed.status).toBe(200);
     expect(listed.body.meta.total).toBe(1);
@@ -69,6 +73,14 @@ describe("Expense API", () => {
     });
     expect(updated.status).toBe(200);
     expect(updated.body.data.amount).toBe(500);
+
+    const missingVersion = await request(app).patch(`/api/v1/expenses/${id}`).set(auth(token)).send({ amount: 600 });
+    expect(missingVersion.status).toBe(400);
+
+    const staleVersion = await request(app).patch(`/api/v1/expenses/${id}`).set(auth(token)).send({
+      amount: 600, version: created.body.data.version
+    });
+    expect(staleVersion.status).toBe(409);
 
     const removed = await request(app).delete(`/api/v1/expenses/${id}`).set(auth(token));
     expect(removed.status).toBe(200);
@@ -111,8 +123,34 @@ describe("Expense API", () => {
     const again = await request(app).post(`/api/v1/expenses/${id}/approve`).set(auth(admin)).send({});
     expect(again.status).toBe(409);
 
-    const editAfterReview = await request(app).patch(`/api/v1/expenses/${id}`).set(auth(owner)).send({ title: "Changed" });
+    const editAfterReview = await request(app).patch(`/api/v1/expenses/${id}`).set(auth(owner)).send({
+      title: "Changed", version: created.body.data.version
+    });
     expect(editAfterReview.status).toBe(409);
+  });
+
+  test("lets only an admin reject once and records the rejection audit fields", async () => {
+    const owner = await tokenFor("reject-owner@example.com");
+    const admin = await tokenFor("reject-admin@example.com", "admin");
+    const member = await tokenFor("reject-member@example.com");
+    const created = await request(app).post("/api/v1/expenses").set(auth(owner)).send(claim);
+    const id = created.body.data._id;
+
+    const forbidden = await request(app).post(`/api/v1/expenses/${id}/reject`).set(auth(member)).send({ comment: "Not approved" });
+    expect(forbidden.status).toBe(403);
+
+    const missingComment = await request(app).post(`/api/v1/expenses/${id}/reject`).set(auth(admin)).send({});
+    expect(missingComment.status).toBe(400);
+
+    const rejected = await request(app).post(`/api/v1/expenses/${id}/reject`).set(auth(admin)).send({ comment: "Missing receipt" });
+    expect(rejected.status).toBe(200);
+    expect(rejected.body.data.status).toBe("rejected");
+    expect(rejected.body.data.reviewedBy).toBeTruthy();
+    expect(rejected.body.data.reviewedAt).toBeTruthy();
+    expect(rejected.body.data.reviewComment).toBe("Missing receipt");
+
+    const again = await request(app).post(`/api/v1/expenses/${id}/reject`).set(auth(admin)).send({ comment: "Not approved" });
+    expect(again.status).toBe(409);
   });
 
   test("returns yearly totals and a CSV export for the caller's own rows", async () => {
@@ -134,5 +172,15 @@ describe("Expense API", () => {
     expect(csv.headers["content-type"]).toMatch(/text\/csv/);
     expect(csv.text).toContain("Airport cab");
     expect(csv.text).not.toContain("Team lunch");
+  });
+
+  test("rejects malformed expense list filters", async () => {
+    const token = await tokenFor("filter-owner@example.com");
+    const response = await request(app)
+      .get("/api/v1/expenses?page=0&status=unknown")
+      .set(auth(token));
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
   });
 });

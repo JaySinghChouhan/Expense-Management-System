@@ -70,4 +70,25 @@ describe("Authentication API", () => {
     });
     expect(response.status).toBe(401);
   });
+
+  test("rate-limits repeated login attempts", async () => {
+    const previousEnvironment = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    try {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const response = await request(app).post("/api/v1/auth/login").send({
+          email: "nobody@example.com", password: "wrongpassword"
+        });
+        expect(response.status).toBe(401);
+      }
+
+      const limited = await request(app).post("/api/v1/auth/login").send({
+        email: "nobody@example.com", password: "wrongpassword"
+      });
+      expect(limited.status).toBe(429);
+    } finally {
+      process.env.NODE_ENV = previousEnvironment;
+    }
+  });
 });
