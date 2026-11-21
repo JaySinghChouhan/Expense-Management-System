@@ -1,0 +1,134 @@
+@media (max-width: 650px) {
+  .shell {
+    display: block;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 12px 14px 8px;
+    overflow: visible;
+  }
+
+  .sidebar h2 {
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    font-size: 17px;
+  }
+
+  .sidebar .muted,
+  .sidebar .logout {
+    display: none;
+  }
+
+  .sidebar a {
+    justify-content: center;
+    min-width: 0;
+    gap: 6px;
+    padding: 9px 5px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .sidebar a svg {
+    flex-shrink: 0;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 56px;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .topbar > span:first-child {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .who {
+    min-width: 0;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .top-signout {
+    white-space: nowrap;
+  }
+
+  .page {
+    padding: 16px 14px 24px;
+  }
+
+  .page-heading {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .page h1 {
+    font-size: 24px;
+  }
+
+  .page-heading select {
+    padding: 9px 10px;
+  }
+
+  .stats {
+    gap: 8px;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .stat span,
+  .stat small {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .stat strong {
+    margin: 9px 0 4px;
+    font-size: 18px;
+  }
+
+  .panel {
+    margin-bottom: 12px;
+    padding: 15px;
+  }
+
+  .panel h2 {
+    margin-bottom: 12px;
+  }
+
+  .chart {
+    height: 230px;
+  }
+
+  .category-row {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .category-row small {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .who {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
