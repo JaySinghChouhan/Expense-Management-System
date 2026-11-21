@@ -73,17 +73,12 @@ cd frontend && npm test
 - Helmet, CORS, rate limiting, validation, and centralized errors are included.
 - For production, add refresh-token rotation, email verification, stronger audit/event retention, pagination caps, and monitoring.
 
-## Deploy frontend on Vercel and API on Render
+## Deploy frontend and API
 
-This machine has no Git, GitHub, Vercel, or Render login, and the Atlas cluster in your screenshot was still provisioning, so the hosted URLs cannot be created from here. `render.yaml` and `frontend/vercel.json` are ready for the steps below.
+The deployment configuration is included in `render.yaml` and `frontend/vercel.json`.
 
-1. In Atlas, wait until Cluster0 is idle. Database Access: create a user. Network Access: allow `0.0.0.0/0` for Render (or Render's egress IPs). Copy the connection string and set the database name to `expense_management`.
-2. Install Git, create a GitHub repository, and push this project. Do not commit `.env` files.
-3. Render: New Web Service, connect the repo, root directory `backend` (or apply `render.yaml`). Build `npm install`, start `npm start`. Set:
-   - `MONGO_URI` = Atlas connection string
-   - `JWT_SECRET` = long random string
-   - `NODE_ENV` = `production`
-   - `SEED_DEMO` = `true` for the first boot (demo admin and user), then set it back to `false`
-   - `CLIENT_URL` = the Vercel URL from step 4 (you can set a placeholder, deploy Vercel, then update this and redeploy)
-4. Vercel: import the same repo, Root Directory `frontend`, framework Vite, output `dist`. Set `VITE_API_URL` to `https://<your-render-service>.onrender.com/api/v1` before the first build. `vercel.json` rewrites client routes to `index.html`.
-5. Put the final Vercel origin into Render `CLIENT_URL` (comma-separate extras if needed) and redeploy the API. Sign in with `admin@example.com` / `Admin@12345` only while the demo seed is enabled.
+1. In MongoDB Atlas, create a database user and allow network access from Render (prefer Render's outbound IPs where available). Use the Atlas connection string with the `expense_management` database.
+2. Deploy the API on Render using `render.yaml`, or use the existing Vercel API deployment. Set `MONGO_URI` to the Atlas connection string and `JWT_SECRET` to a long random value in the API host's environment. Keep `SEED_DEMO` set to `false` for public deployments; the seeded demo accounts are not created in this mode.
+3. Deploy the frontend on Vercel with Root Directory `frontend`, framework Vite, and output directory `dist`. Set `VITE_API_URL` to the API base URL ending in `/api/v1`.
+4. Set the API's `CLIENT_URL` to the frontend origin and redeploy the API. For the current Vercel deployment, use `https://expense-management-system-57v.vercel.app` as `CLIENT_URL` and `https://expense-management-system-363f.vercel.app/api/v1` as `VITE_API_URL`.
+5. Register an account before signing in. The demo admin credentials shown on the login screen only work if the database was explicitly seeded; public registration creates user-role accounts.

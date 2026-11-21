@@ -1,5 +1,9 @@
 import axios from "axios";
-const api=axios.create({baseURL:import.meta.env.VITE_API_URL||"http://localhost:5000/api/v1"});
+const apiBaseUrl = import.meta.env.VITE_API_URL
+ || (import.meta.env.PROD
+   ? "https://expense-management-system-363f.vercel.app/api/v1"
+   : "http://localhost:5000/api/v1");
+const api=axios.create({baseURL:apiBaseUrl});
 api.interceptors.request.use(config=>{
  const token=localStorage.getItem("expense_token");
  if(token) config.headers.Authorization=`Bearer ${token}`;

@@ -19,6 +19,24 @@ afterAll(async () => {
 });
 
 describe("Authentication API", () => {
+  test("allows the deployed frontend to call the login API", async () => {
+    const response = await request(app)
+      .options("/api/v1/auth/login")
+      .set("Origin", "https://expense-management-system-57v.vercel.app")
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "content-type");
+
+    expect(response.headers["access-control-allow-origin"])
+      .toBe("https://expense-management-system-57v.vercel.app");
+  });
+
+  test("reports the API version root as available", async () => {
+    const response = await request(app).get("/api/v1");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+  });
+
   test("registers a user and returns a JWT", async () => {
     const response = await request(app).post("/api/v1/auth/register").send({
       name: "Test User", email: "test@example.com", password: "StrongPass123"

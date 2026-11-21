@@ -14,14 +14,18 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(helmet());
 
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://expense-management-system-57v.vercel.app",
+  ...(process.env.CLIENT_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+]);
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(null, false);
   },
   credentials: true
@@ -30,6 +34,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
 app.get("/api/health", (_req, res) => res.json({ success: true, message: "Expense API is healthy" }));
+app.get("/api/v1", (_req, res) => res.json({ success: true, message: "Expense API v1 is running" }));
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/expenses", expenseRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
